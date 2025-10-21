@@ -395,19 +395,48 @@ async function saveSchoolChanges() {
 
 // Utility functions
 function showError(message) {
-    alert('Lỗi: ' + message);
+    // Create or update error message
+    let errorDiv = document.getElementById('errorMessage');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'errorMessage';
+        errorDiv.className = 'error-message';
+        document.querySelector('.search-panel').appendChild(errorDiv);
+    }
+    
+    errorDiv.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            ${message}
+        </div>
+    `;
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }, 5000);
 }
 
 // Search functionality
 function searchSchools() {
     try {
-        const name = document.getElementById('searchSchoolName').value.trim();
-        const level = document.getElementById('searchSchoolLevel').value;
-        const district = document.getElementById('searchSchoolDistrict').value;
+        // Clear any previous error messages
+        hideError();
+        
+        // Show loading indicator
+        showLoading();
+        
         const minStudents = document.getElementById('searchMinStudents').value;
         
         // Validation
-        if (minStudents && (isNaN(minStudents) || parseInt(minStudents) < 0)) {
+        if (!minStudents) {
+            showError('Vui lòng nhập số học sinh tối thiểu!');
+            return;
+        }
+        
+        if (isNaN(minStudents) || parseInt(minStudents) < 0) {
             showError('Số học sinh phải là số dương');
             return;
         }
@@ -421,28 +450,11 @@ function searchSchools() {
         // Filter schools based on search criteria
         let filteredSchools = currentSchools.filter(school => {
             try {
-                // Name filter (case insensitive)
-                if (name && !school.ten_truong.toLowerCase().includes(name.toLowerCase())) {
-                    return false;
-                }
-                
-                // Level filter
-                if (level && school.ma_cap_hoc !== level) {
-                    return false;
-                }
-                
-                // District filter
-                if (district && school.ma_quan_huyen !== district) {
-                    return false;
-                }
-                
                 // Min students filter
-                if (minStudents) {
-                    const schoolStudents = parseInt(school.so_hoc_sinh) || 0;
-                    const minStudentsNum = parseInt(minStudents);
-                    if (schoolStudents < minStudentsNum) {
-                        return false;
-                    }
+                const schoolStudents = parseInt(school.so_hoc_sinh) || 0;
+                const minStudentsNum = parseInt(minStudents);
+                if (schoolStudents < minStudentsNum) {
+                    return false;
                 }
                 
                 return true;
@@ -458,23 +470,31 @@ function searchSchools() {
         // Display filtered schools
         displaySchoolsOnMap(filteredSchools);
         
-        // Show search results count
-        showSearchResults(filteredSchools.length);
+        // Show search results count and table
+        if (filteredSchools.length === 0) {
+            showError('Không tìm thấy trường nào có số học sinh >= ' + minStudents);
+            hideSearchResults();
+            hideResultsTable();
+        } else {
+            showSearchResults(filteredSchools.length, minStudents);
+            showResultsTable(filteredSchools);
+        }
         
         // Log search activity
         console.log(`Search completed: ${filteredSchools.length} schools found`);
         
+        // Hide loading indicator
+        hideLoading();
+        
     } catch (error) {
         console.error('Search error:', error);
         showError('Lỗi khi tìm kiếm: ' + error.message);
+        hideLoading();
     }
 }
 
 function clearSearch() {
-    // Reset all form fields
-    document.getElementById('searchSchoolName').value = '';
-    document.getElementById('searchSchoolLevel').value = '';
-    document.getElementById('searchSchoolDistrict').value = '';
+    // Reset form field
     document.getElementById('searchMinStudents').value = '';
     
     // Clear current markers
@@ -483,11 +503,14 @@ function clearSearch() {
     // Display all schools
     displaySchoolsOnMap(currentSchools);
     
-    // Hide search results
+    // Hide search results, errors, table and loading
     hideSearchResults();
+    hideError();
+    hideResultsTable();
+    hideLoading();
 }
 
-function showSearchResults(count) {
+function showSearchResults(count, minStudents) {
     // Create or update search results indicator
     let resultsDiv = document.getElementById('searchResults');
     if (!resultsDiv) {
@@ -497,18 +520,84 @@ function showSearchResults(count) {
         document.querySelector('.search-panel').appendChild(resultsDiv);
     }
     
-    resultsDiv.innerHTML = `
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle me-2"></i>
-            Tìm thấy ${count} trường học
-        </div>
-    `;
+    resultsDiv.innerHTML = ``;
 }
 
 function hideSearchResults() {
     const resultsDiv = document.getElementById('searchResults');
     if (resultsDiv) {
         resultsDiv.remove();
+    }
+}
+
+function showResultsTable(schools) {
+    const tableDiv = document.getElementById('resultsTable');
+    const tableBody = document.getElementById('resultsTableBody');
+    
+    if (tableDiv && tableBody) {
+        // Clear existing rows
+        tableBody.innerHTML = '';
+        
+        // Add schools to table
+        schools.forEach(school => {
+            const row = document.createElement('tr');
+            const studentCount = school.so_hoc_sinh || 0;
+            row.innerHTML = `
+                <td><strong>${school.ten_truong}</strong></td>
+                <td><span class="badge bg-primary">${studentCount.toLocaleString()}</span></td>
+                <td>${school.dia_chi}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+        
+        // Show table
+        tableDiv.style.display = 'block';
+    }
+}
+
+function hideResultsTable() {
+    const tableDiv = document.getElementById('resultsTable');
+    if (tableDiv) {
+        tableDiv.style.display = 'none';
+    }
+}
+
+function hideError() {
+    const errorDiv = document.getElementById('errorMessage');
+    if (errorDiv) {
+        errorDiv.remove();
+    }
+    // Also hide results table when hiding error
+    hideResultsTable();
+}
+
+function showLoading() {
+    let loadingDiv = document.getElementById('loadingIndicator');
+    if (!loadingDiv) {
+        loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loadingIndicator';
+        loadingDiv.className = 'loading-indicator';
+        document.querySelector('.search-panel').appendChild(loadingDiv);
+    }
+    
+    loadingDiv.innerHTML = `
+        <div class="alert alert-info">
+            <i class="fas fa-spinner fa-spin me-2"></i>
+            Đang tìm kiếm...
+        </div>
+    `;
+}
+
+function hideLoading() {
+    const loadingDiv = document.getElementById('loadingIndicator');
+    if (loadingDiv) {
+        loadingDiv.remove();
+    }
+}
+
+function handleEnterKey(event) {
+    if (event.key === 'Enter') {
+        searchSchools();
     }
 }
 
@@ -520,3 +609,4 @@ window.openMapPicker = openMapPicker;
 window.saveSchoolChanges = saveSchoolChanges;
 window.searchSchools = searchSchools;
 window.clearSearch = clearSearch;
+window.handleEnterKey = handleEnterKey;
