@@ -543,11 +543,33 @@ function showResultsTable(schools) {
             const row = document.createElement('tr');
             const studentCount = school.so_hoc_sinh || 0;
             row.innerHTML = `
-                <td><strong>${school.ten_truong}</strong></td>
+                <td><strong class="school-name-clickable" style="cursor: pointer; color: #007bff; text-decoration: underline;" data-lat="${school.latitude}" data-lng="${school.longitude}">${school.ten_truong}</strong></td>
                 <td><span class="badge bg-primary">${studentCount.toLocaleString()}</span></td>
                 <td>${school.dia_chi}</td>
             `;
             tableBody.appendChild(row);
+        });
+        
+        // Add click event listeners to school names
+        const clickableNames = tableBody.querySelectorAll('.school-name-clickable');
+        clickableNames.forEach(nameElement => {
+            nameElement.addEventListener('click', function() {
+                const lat = parseFloat(this.getAttribute('data-lat'));
+                const lng = parseFloat(this.getAttribute('data-lng'));
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    // Move map to school location
+                    map.setView([lat, lng], 16);
+                    
+                    // Optional: Add a temporary highlight effect
+                    this.style.backgroundColor = '#ffeb3b';
+                    this.style.color = '#000';
+                    setTimeout(() => {
+                        this.style.backgroundColor = '';
+                        this.style.color = '#007bff';
+                    }, 1000);
+                }
+            });
         });
         
         // Show table
