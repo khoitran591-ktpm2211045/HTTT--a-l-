@@ -66,7 +66,7 @@ function displaySchoolsOnMap(schools) {
         }).addTo(map);
         
         // Create popup content
-        const popupContent = createPopupContent(school);
+        const popupContent = createMapPopupContent(school);
         marker.bindPopup(popupContent);
         
         schoolMarkers.push(marker);
@@ -97,19 +97,14 @@ function getMarkerSize(studentCount) {
 }
 
 // Create popup content
-function createPopupContent(school) {
+function createMapPopupContent(school) {
     console.log('Creating popup for school:', school.ten_truong, 'with coordinates:', school.latitude, school.longitude);
+    console.log('Using map.js createMapPopupContent function - fields removed version');
     return `
         <div class="school-popup">
             <h5>${school.ten_truong}</h5>
             <div class="info-item">
-                <strong>Mã trường:</strong> ${school.id}
-            </div>
-            <div class="info-item">
                 <strong>Cấp học:</strong> ${school.ten_cap_hoc}
-            </div>
-            <div class="info-item">
-                <strong>Loại:</strong> ${school.ten_loai_truong}
             </div>
             <div class="info-item">
                 <strong>Quận/Huyện:</strong> ${school.ten_quan_huyen}
@@ -124,19 +119,10 @@ function createPopupContent(school) {
                 <strong>Số học sinh:</strong> ${school.so_hoc_sinh.toLocaleString()}
             </div>
             <div class="info-item">
-                <strong>Điện thoại:</strong> ${school.dien_thoai || 'N/A'}
+                <strong>Vĩ độ:</strong> ${Number(school.latitude).toFixed(15)}
             </div>
             <div class="info-item">
-                <strong>Email:</strong> ${school.email || 'N/A'}
-            </div>
-            <div class="info-item">
-                <strong>Website:</strong> ${school.website ? `<a href="${school.website}" target="_blank">${school.website}</a>` : 'N/A'}
-            </div>
-            <div class="info-item">
-                <strong>Vĩ độ:</strong> ${parseFloat(school.latitude || 0).toFixed(6)}
-            </div>
-            <div class="info-item">
-                <strong>Kinh độ:</strong> ${parseFloat(school.longitude || 0).toFixed(6)}
+                <strong>Kinh độ:</strong> ${Number(school.longitude).toFixed(15)}
             </div>
             <div class="popup-actions">
                 <button class="btn btn-primary edit-school-btn" onclick="editSchool('${school.id}')" title="Chỉnh sửa">
@@ -164,13 +150,10 @@ function editSchool(schoolId) {
     document.getElementById('editSchoolId').value = school.id;
     document.getElementById('editSchoolName').value = school.ten_truong;
     document.getElementById('editSchoolLevel').value = school.ma_cap_hoc;
-    document.getElementById('editSchoolType').value = school.ma_loai_truong;
     document.getElementById('editSchoolDistrict').value = school.ma_quan_huyen;
     document.getElementById('editSchoolAddress').value = school.dia_chi;
     document.getElementById('editSchoolClasses').value = school.so_lop;
     document.getElementById('editSchoolStudents').value = school.so_hoc_sinh;
-    document.getElementById('editSchoolPhone').value = school.dien_thoai || '';
-    document.getElementById('editSchoolEmail').value = school.email || '';
     document.getElementById('editSchoolWebsite').value = school.website || '';
     document.getElementById('editSchoolLatitude').value = school.latitude;
     document.getElementById('editSchoolLongitude').value = school.longitude;
@@ -248,7 +231,7 @@ function onMapClickForPosition(e) {
 
 // Confirm position update
 function confirmPositionUpdate(lat, lng) {
-    if (confirm(`Bạn có chắc muốn cập nhật vị trí trường "${currentEditingSchool.ten_truong}"?\n\nVị trí mới:\nVĩ độ: ${lat.toFixed(6)}\nKinh độ: ${lng.toFixed(6)}`)) {
+    if (confirm(`Bạn có chắc muốn cập nhật vị trí trường "${currentEditingSchool.ten_truong}"?\n\nVị trí mới:\nVĩ độ: ${lat.toFixed(15)}\nKinh độ: ${lng.toFixed(15)}`)) {
         updateSchoolPosition(lat, lng);
     } else {
         // Restore original position
@@ -338,8 +321,8 @@ function onMapClick(e) {
     const lng = e.latlng.lng;
     
     // Update form fields
-    document.getElementById('editSchoolLatitude').value = lat.toFixed(6);
-    document.getElementById('editSchoolLongitude').value = lng.toFixed(6);
+    document.getElementById('editSchoolLatitude').value = lat.toFixed(15);
+    document.getElementById('editSchoolLongitude').value = lng.toFixed(15);
     
     // Remove existing picker marker
     if (mapPickerMarker) {
@@ -415,9 +398,125 @@ function showError(message) {
     alert('Lỗi: ' + message);
 }
 
+// Search functionality
+function searchSchools() {
+    try {
+        const name = document.getElementById('searchSchoolName').value.trim();
+        const level = document.getElementById('searchSchoolLevel').value;
+        const district = document.getElementById('searchSchoolDistrict').value;
+        const minStudents = document.getElementById('searchMinStudents').value;
+        
+        // Validation
+        if (minStudents && (isNaN(minStudents) || parseInt(minStudents) < 0)) {
+            showError('Số học sinh phải là số dương');
+            return;
+        }
+        
+        // Check if we have schools data
+        if (!currentSchools || currentSchools.length === 0) {
+            showError('Chưa có dữ liệu trường học. Vui lòng thử lại sau.');
+            return;
+        }
+        
+        // Filter schools based on search criteria
+        let filteredSchools = currentSchools.filter(school => {
+            try {
+                // Name filter (case insensitive)
+                if (name && !school.ten_truong.toLowerCase().includes(name.toLowerCase())) {
+                    return false;
+                }
+                
+                // Level filter
+                if (level && school.ma_cap_hoc !== level) {
+                    return false;
+                }
+                
+                // District filter
+                if (district && school.ma_quan_huyen !== district) {
+                    return false;
+                }
+                
+                // Min students filter
+                if (minStudents) {
+                    const schoolStudents = parseInt(school.so_hoc_sinh) || 0;
+                    const minStudentsNum = parseInt(minStudents);
+                    if (schoolStudents < minStudentsNum) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error filtering school:', school, error);
+                return false;
+            }
+        });
+        
+        // Clear current markers
+        clearMarkers();
+        
+        // Display filtered schools
+        displaySchoolsOnMap(filteredSchools);
+        
+        // Show search results count
+        showSearchResults(filteredSchools.length);
+        
+        // Log search activity
+        console.log(`Search completed: ${filteredSchools.length} schools found`);
+        
+    } catch (error) {
+        console.error('Search error:', error);
+        showError('Lỗi khi tìm kiếm: ' + error.message);
+    }
+}
+
+function clearSearch() {
+    // Reset all form fields
+    document.getElementById('searchSchoolName').value = '';
+    document.getElementById('searchSchoolLevel').value = '';
+    document.getElementById('searchSchoolDistrict').value = '';
+    document.getElementById('searchMinStudents').value = '';
+    
+    // Clear current markers
+    clearMarkers();
+    
+    // Display all schools
+    displaySchoolsOnMap(currentSchools);
+    
+    // Hide search results
+    hideSearchResults();
+}
+
+function showSearchResults(count) {
+    // Create or update search results indicator
+    let resultsDiv = document.getElementById('searchResults');
+    if (!resultsDiv) {
+        resultsDiv = document.createElement('div');
+        resultsDiv.id = 'searchResults';
+        resultsDiv.className = 'search-results';
+        document.querySelector('.search-panel').appendChild(resultsDiv);
+    }
+    
+    resultsDiv.innerHTML = `
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Tìm thấy ${count} trường học
+        </div>
+    `;
+}
+
+function hideSearchResults() {
+    const resultsDiv = document.getElementById('searchResults');
+    if (resultsDiv) {
+        resultsDiv.remove();
+    }
+}
+
 // Export functions for global access
 window.loadAllSchools = loadAllSchools;
 window.editSchool = editSchool;
 window.editPosition = editPosition;
 window.openMapPicker = openMapPicker;
 window.saveSchoolChanges = saveSchoolChanges;
+window.searchSchools = searchSchools;
+window.clearSearch = clearSearch;

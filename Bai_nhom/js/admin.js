@@ -17,9 +17,9 @@ function initializeDataTable() {
         },
         responsive: true,
         pageLength: 25,
-        order: [[1, 'asc']],
+        order: [[0, 'asc']],
         columnDefs: [
-            { orderable: false, targets: [8] } // Disable sorting on actions column
+            { orderable: false, targets: [7] } // Disable sorting on actions column
         ]
     });
 }
@@ -62,6 +62,26 @@ async function loadAllSchools() {
     }
 }
 
+// Function to get proper school name from school code
+function getSchoolName(schoolCode) {
+    const schoolNames = {
+        'MN004': 'ACA - Mầm non song ngữ',
+        'CDCT001': 'Cao đẳng Cần Thơ',
+        'CDCT002': 'Cao đẳng Y tế Cần Thơ',
+        'CDCT003': 'Cao đẳng Kinh tế - Kỹ thuật Cần Thơ',
+        'CDCT004': 'Cao đẳng Kinh tế Đối ngoại (Cơ sở Cần Thơ)',
+        'CDCT005': 'Cao đẳng FPT Polytechnic (Cơ sở Cần Thơ)',
+        'CDCT006': 'Cao đẳng Công nghệ Thông tin Cần Thơ',
+        'CDCT007': 'Cao đẳng Nghề Cần Thơ',
+        'CDCT008': 'Cao đẳng Du lịch Cần Thơ',
+        'CDCT009': 'Cao đẳng Nông nghiệp Cần Thơ',
+        'CDCT010': 'Cao đẳng Giao thông Vận tải Cần Thơ',
+        'CDCT011': 'Cao đẳng Xây dựng Cần Thơ'
+    };
+    
+    return schoolNames[schoolCode] || schoolCode;
+}
+
 // Display schools in table
 function displaySchoolsInTable(schools) {
     const tbody = document.getElementById('schoolsTableBody');
@@ -69,7 +89,7 @@ function displaySchoolsInTable(schools) {
     if (schools.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="text-center">Không có dữ liệu</td>
+                <td colspan="8" class="text-center">Không có dữ liệu</td>
             </tr>
         `;
         // Initialize DataTable if not already initialized
@@ -84,8 +104,7 @@ function displaySchoolsInTable(schools) {
         const statusBadge = getStatusBadge(school.trang_thai);
         html += `
             <tr>
-                <td><strong>${school.id}</strong></td>
-                <td>${school.ten_truong}</td>
+                <td>${getSchoolName(school.ten_truong)}</td>
                 <td><span class="badge bg-info">${school.ten_cap_hoc}</span></td>
                 <td>${school.ten_loai_truong}</td>
                 <td>${school.ten_quan_huyen}</td>
@@ -394,7 +413,7 @@ function showLoading() {
     const tbody = document.getElementById('schoolsTableBody');
     tbody.innerHTML = `
         <tr>
-            <td colspan="9" class="text-center">
+            <td colspan="8" class="text-center">
                 <div class="loading">
                     <div class="spinner-border" role="status">
                         <span class="visually-hidden">Loading...</span>

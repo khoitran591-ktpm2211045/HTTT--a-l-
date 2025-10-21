@@ -115,16 +115,11 @@
             z-index: 1000;
         }
 
-        .nav-buttons {
+        .settings-button {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1001;
-            display: flex;
-            gap: 10px;
-        }
-
-        .nav-button {
             padding: 10px 15px;
             border-radius: 50%;
             font-size: 1.5rem;
@@ -132,118 +127,6 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
-        }
-
-        .nav-button:hover {
-            transform: translateY(-2px);
-        }
-
-        .search-panel {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            width: 300px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            z-index: 1000;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-            .search-panel {
-                width: calc(100vw - 40px);
-                left: 20px;
-                right: 20px;
-                top: 10px;
-                max-height: 70vh;
-            }
-            
-            .search-body {
-                padding: 15px;
-            }
-            
-            .search-actions {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .search-actions .btn {
-                width: 100%;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .search-panel {
-                width: calc(100vw - 20px);
-                left: 10px;
-                right: 10px;
-                top: 5px;
-                max-height: 60vh;
-            }
-            
-            .search-header {
-                padding: 10px;
-            }
-            
-            .search-header h6 {
-                font-size: 0.9rem;
-            }
-            
-            .search-body {
-                padding: 10px;
-            }
-            
-            .form-label {
-                font-size: 0.85rem;
-            }
-            
-            .form-control, .form-select {
-                padding: 8px 12px;
-                font-size: 0.9rem;
-            }
-        }
-
-        .search-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 15px 15px 0 0;
-            margin: 0;
-        }
-
-        .search-header h6 {
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .search-body {
-            padding: 20px;
-        }
-
-        .search-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .search-actions .btn {
-            flex: 1;
-            border-radius: 10px;
-            font-weight: 600;
-        }
-
-        .search-results {
-            margin-top: 15px;
-        }
-
-        .search-results .alert {
-            border-radius: 10px;
-            border: none;
-            font-size: 0.9rem;
         }
         
         .legend-item {
@@ -436,67 +319,10 @@
 </head>
 <body>
 
-    <!-- Navigation Buttons -->
-    <div class="nav-buttons">
-        <a href="Bieu_do.html" class="btn btn-info nav-button">
-            <i class="fas fa-chart-bar"></i>
-        </a>
-        <a href="admin.html" class="btn btn-primary nav-button">
-            <i class="fas fa-cog"></i>
-        </a>
-    </div>
-
-    <!-- Search Panel -->
-    <div class="search-panel">
-        <div class="search-header">
-            <h6><i class="fas fa-search me-2"></i>Tìm kiếm trường học</h6>
-        </div>
-        <div class="search-body">
-            <div class="mb-3">
-                <label for="searchSchoolName" class="form-label">Tên trường:</label>
-                <input type="text" class="form-control" id="searchSchoolName" placeholder="Nhập tên trường...">
-            </div>
-            <div class="mb-3">
-                <label for="searchSchoolLevel" class="form-label">Cấp học:</label>
-                <select class="form-select" id="searchSchoolLevel">
-                    <option value="">Tất cả cấp học</option>
-                    <option value="DH">Đại học</option>
-                    <option value="CD">Cao đẳng</option>
-                    <option value="THPT">THPT</option>
-                    <option value="THCS">THCS</option>
-                    <option value="TH">Tiểu học</option>
-                    <option value="MN">Mầm non</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="searchSchoolDistrict" class="form-label">Quận/Huyện:</label>
-                <select class="form-select" id="searchSchoolDistrict">
-                    <option value="">Tất cả quận/huyện</option>
-                    <option value="NK">Ninh Kiều</option>
-                    <option value="BT">Bình Thủy</option>
-                    <option value="CR">Cái Răng</option>
-                    <option value="OM">Ô Môn</option>
-                    <option value="TN">Thốt Nốt</option>
-                    <option value="CD">Cờ Đỏ</option>
-                    <option value="PD">Phong Điền</option>
-                    <option value="VT">Vĩnh Thạnh</option>
-                    <option value="TL">Thới Lai</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="searchMinStudents" class="form-label">Số học sinh tối thiểu:</label>
-                <input type="number" class="form-control" id="searchMinStudents" placeholder="Nhập số học sinh..." min="0">
-            </div>
-            <div class="search-actions">
-                <button class="btn btn-primary btn-sm" onclick="searchSchools()">
-                    <i class="fas fa-search me-1"></i>Tìm kiếm
-                </button>
-                <button class="btn btn-secondary btn-sm" onclick="clearSearch()">
-                    <i class="fas fa-times me-1"></i>Xóa
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Settings Button -->
+    <a href="admin.html" class="btn btn-primary settings-button">
+        <i class="fas fa-cog"></i>
+    </a>
 
     <!-- Map Section - Full Screen -->
     <div id="map"></div>
