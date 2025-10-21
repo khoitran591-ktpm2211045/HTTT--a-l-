@@ -4,6 +4,7 @@ let schoolMarkers = [];
 let currentSchools = [];
 let currentEditingSchool = null;
 let mapPickerMarker = null;
+let searchResults = []; // Store search results for click navigation
 
 // School level colors
 const levelColors = {
@@ -393,6 +394,49 @@ async function saveSchoolChanges() {
     }
 }
 
+// Navigate to school marker on map
+function navigateToSchool(schoolId) {
+    // Find the school in search results
+    const school = searchResults.find(s => s.id == schoolId);
+    if (!school) {
+        showError('Không tìm thấy thông tin trường học');
+        return;
+    }
+    
+    // Find the corresponding marker
+    const marker = schoolMarkers.find(m => {
+        const lat = m.getLatLng().lat;
+        const lng = m.getLatLng().lng;
+        return Math.abs(lat - school.latitude) < 0.0001 && Math.abs(lng - school.longitude) < 0.0001;
+    });
+    
+    if (marker) {
+        // Center map on the marker
+        map.setView([school.latitude, school.longitude], 16);
+        
+        // Open popup for the marker
+        marker.openPopup();
+        
+        // Add a temporary highlight effect
+        marker.setStyle({
+            color: '#ff0000',
+            weight: 4,
+            fillOpacity: 1
+        });
+        
+        // Reset style after 2 seconds
+        setTimeout(() => {
+            marker.setStyle({
+                color: levelColors[school.ma_cap_hoc] || '#333',
+                weight: 2,
+                fillOpacity: 0.8
+            });
+        }, 2000);
+    } else {
+        showError('Không tìm thấy marker của trường trên bản đồ');
+    }
+}
+
 // Utility functions
 function showError(message) {
     // Create or update error message
@@ -464,6 +508,9 @@ function searchSchools() {
             }
         });
         
+        // Store search results for navigation
+        searchResults = filteredSchools;
+        
         // Clear current markers
         clearMarkers();
         
@@ -496,6 +543,9 @@ function searchSchools() {
 function clearSearch() {
     // Reset form field
     document.getElementById('searchMinStudents').value = '';
+    
+    // Clear search results
+    searchResults = [];
     
     // Clear current markers
     clearMarkers();
@@ -543,33 +593,27 @@ function showResultsTable(schools) {
             const row = document.createElement('tr');
             const studentCount = school.so_hoc_sinh || 0;
             row.innerHTML = `
-                <td><strong class="school-name-clickable" style="cursor: pointer; color: #007bff; text-decoration: underline;" data-lat="${school.latitude}" data-lng="${school.longitude}">${school.ten_truong}</strong></td>
+                <td><strong>${school.ten_truong}</strong></td>
                 <td><span class="badge bg-primary">${studentCount.toLocaleString()}</span></td>
                 <td>${school.dia_chi}</td>
             `;
-            tableBody.appendChild(row);
-        });
-        
-        // Add click event listeners to school names
-        const clickableNames = tableBody.querySelectorAll('.school-name-clickable');
-        clickableNames.forEach(nameElement => {
-            nameElement.addEventListener('click', function() {
-                const lat = parseFloat(this.getAttribute('data-lat'));
-                const lng = parseFloat(this.getAttribute('data-lng'));
-                
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    // Move map to school location
-                    map.setView([lat, lng], 16);
-                    
-                    // Optional: Add a temporary highlight effect
-                    this.style.backgroundColor = '#ffeb3b';
-                    this.style.color = '#000';
-                    setTimeout(() => {
-                        this.style.backgroundColor = '';
-                        this.style.color = '#007bff';
-                    }, 1000);
-                }
+            
+            // Add click handler to navigate to school marker
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', function() {
+                navigateToSchool(school.id);
             });
+            
+            // Add hover effect
+            row.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = '#e3f2fd';
+            });
+            
+            row.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+            });
+            
+            tableBody.appendChild(row);
         });
         
         // Show table
@@ -632,3 +676,4 @@ window.saveSchoolChanges = saveSchoolChanges;
 window.searchSchools = searchSchools;
 window.clearSearch = clearSearch;
 window.handleEnterKey = handleEnterKey;
+window.navigateToSchool = navigateToSchool;

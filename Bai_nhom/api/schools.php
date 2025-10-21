@@ -17,6 +17,9 @@ switch ($action) {
     case 'get_statistics':
         getStatistics();
         break;
+    case 'get_district_stats':
+        getDistrictStats();
+        break;
     case 'add_school':
         addSchool();
         break;
@@ -553,6 +556,31 @@ function updateSchoolPosition() {
     } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Lỗi cập nhật vị trí: ' . $e->getMessage()]);
+    }
+}
+
+function getDistrictStats() {
+    global $pdo;
+    
+    try {
+        $sql = "SELECT 
+                    qh.ten_quan_huyen,
+                    COUNT(t.ma_truong) as so_truong,
+                    COALESCE(SUM(t.so_hoc_sinh), 0) as so_hoc_sinh
+                FROM quan_huyen qh
+                LEFT JOIN truong_hoc t ON qh.ma_quan_huyen = t.ma_quan_huyen
+                GROUP BY qh.ma_quan_huyen, qh.ten_quan_huyen
+                ORDER BY so_truong DESC";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode(['success' => true, 'data' => $data]);
+        
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Lỗi lấy thống kê quận/huyện: ' . $e->getMessage()]);
     }
 }
 ?>
